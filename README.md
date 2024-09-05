@@ -1,2 +1,2 @@
-block-application
-django-project
+rest framework
+todo project
