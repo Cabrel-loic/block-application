@@ -1,0 +1,27 @@
+{% extends 'blog/base.html' %} {% block content %}
+<h2>{{ post.title }}</h2>
+<p>{{ post.content }}</p>
+<a href="{% url 'edit' post.pk %}">Edit</a>
+<form
+  action="{% url 'post_delete' post.pk %}"
+  method="post"
+  style="display: inline"
+>
+  {% csrf_token %}
+  <button type="submit">Delete</button>
+</form>
+<h2>{{ comments.count }} comments</h2>
+
+<h2>Add a comment</h2>
+<form method="post">
+  {% csrf_token %} {{ form.as_p }}
+  <button type="submit">Add Comment</button>
+</form>
+
+{% for comment in Comments%}
+<p>{{Comment.name}} {{Comment.created_on}} {{Comment.body}}</p>
+<form method="POST">
+  {{ comment_form.as_p }} {% csrf_token %}
+  <button type="submit">Submit</button>
+</form>
+{% endfor %} {% endblock %}

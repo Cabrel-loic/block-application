@@ -1,0 +1,15 @@
+<html>
+  <head>
+    <title>Blog</title>
+  </head>
+  <body>
+    <h1><a href="{% url 'post_list' %}">Blog</a></h1>
+    {% block content %}
+
+    <form method="get" action="{% url 'search' %}">
+      <input type="text" name="q" placeholder="Search blog posts..." />
+      <button type="submit">Search</button>
+    </form>
+    {% endblock %}
+  </body>
+</html>

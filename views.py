@@ -1,59 +1,127 @@
-from rest_framework import status
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
+from django.shortcuts import get_object_or_404, render, redirect
+from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
-# from rest_framework import generics
-from .models import ToDo
-from .serializers import ToDoSerializer
+from blog.models import Post
+from django.core.paginator import Paginator
+from .forms import CommentForm, PostForm
+from django.contrib.auth import authenticate, login,logout
+from django.contrib import messages
+from django.db.models import Q
 
 
 
-@login_required
-@api_view(['GET', 'POST'])
-def todo_list(request):
-    if request.method == 'GET':
-        todos = ToDo.objects.all()
-        serializer = ToDoSerializer(todos, many=True)
-        return Response(serializer.data)
+# Create your views here.
     
-    elif request.method == 'POST':
-        serializer = ToDoSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
-       
-       
 @login_required
-@api_view(['GET', 'PUT', 'DELETE'])
-def todo_detail(request, pk):
-    try:
-        todo = ToDo.objects.get(pk=pk)
-    except ToDo.DoesNotExist:
-        return Response(status=400)
+def login_page(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        if not User.objects.filter(username = username).exists():
+            messages.error(request, 'invalid username')
+            return redirect('login')
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return redirect('post_list')
+        messages.error(request,'OOps!')
+    return render(request, 'blog/login.html')
 
-    if request.method == 'GET':
-        serializer = ToDoSerializer(todo)
-        return Response(serializer.data)
+def register_page(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        
+        user = User.objects.filter(username=username)
+        
+        if user:
+            messages.info(request, 'Username already exist')
+            return redirect('register')
+        user = User.objects.create_user(
+            username=username
+        )
+        user.set_password(password)
+        user.save()
+        # send.mail()
+        messages.info(request, 'Account created successfully')
+        return redirect('login')
+    return render(request, 'blog/register.html')
 
-    elif request.method == 'PUT':
-        serializer = ToDoSerializer(todo, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
+def logout_page(request):
+    logout(request)
+    return redirect('post_list')
+        
+    
 
-    elif request.method == 'DELETE':
-        todo.delete()
-        return Response(status=400)
-       
-       
-          
-# class ToDoList(generics.ListCreateAPIView):
-#     queryset = ToDo.objects.all()
-#     serializer_class = ToDoSerializer
+def post_list(request):
+    search_query = request.GET.get('q')
+    posts = Post.objects.all()
+    if search_query:
+        posts = posts.filter(Q(title__icontains=search_query) | Q(content__icontains=search_query))
+    paginator = Paginator(posts, 5)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    print(page_obj)
+    context = {
+        'page_obj': page_obj,
+    }
+    return render(request, 'blog/post_list.html', context)
 
-# class ToDoDetail(generics.RetrieveUpdateDestroyAPIView):
-#     queryset = ToDo.objects.all()
-#     serializer_class = ToDoSerializer
+
+
+def post_detail(request, id):
+    post = get_object_or_404(Post, id=id)
+    comments = post.comments.filter()
+    new_comment = None
+    if request.user.is_authenticated:
+        if request.method == 'POST':
+            form = CommentForm(data=request.POST)
+            if form.is_valid():
+                new_comment = form.save(commit=False)
+                new_comment.post = post
+                new_comment.author = request.user
+                new_comment.save()
+        else:
+            form = CommentForm()
+    else:
+        form = None
+    
+    context = {
+        'post': post,
+        'comments': comments,
+        'new_comment': new_comment,
+        'form': form
+    }
+    return render(request, 'blog/post_detail.html', context)
+
+def post_create(request):
+    if request.method == 'POST':
+        form = PostForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('post_list')
+    else:
+        form = PostForm()
+    return render(request, 'blog/post_create.html', {'form': form})
+
+def post_edit(request, id):
+    post = get_object_or_404(Post, id=id)
+    if request.method == 'POST':
+        form = PostForm(request.POST, instance=post)
+        if form.is_valid():
+            form.save()
+            return redirect('post_detail', id=post.id)
+    else:
+        form = PostForm(instance=post)
+    return render(request, 'blog/post_create.html', {'form': form})
    
+
+def post_delete(request, id):
+    post = get_object_or_404(Post, id=id)
+    if request.method == 'POST':
+        post.delete()
+        return redirect('post_list')
+    context = {
+        'posts': post,
+    }
+    return render(request, 'blog/post_list.html',  context)

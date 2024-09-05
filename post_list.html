@@ -1,0 +1,45 @@
+{% extends 'blog/base.html' %} {% load static %}
+
+<link rel="stylesheet" href="{% static 'blog/base.html/style.css' %}" />
+
+{% block content %}
+<h2>Post</h2>
+<form action="">
+  <input
+    style="padding: 2px"
+    type="text"
+    name="q"
+    placeholder="Search ......"
+  />
+</form>
+{% comment %} {% for post in page_obj %}
+    {{ post.full_name|upper }}<br>
+{% endfor %} {% endcomment %}
+<div class="pagination">
+  <span class="step-links">
+      {% if page_obj.has_previous %}
+          <a href="?page=1">&laquo; first</a>
+          <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+      {% endif %}
+
+      <span class="current">
+          Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+      </span>
+
+      {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}">next</a>
+          <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+      {% endif %}
+  </span>
+</div>
+
+  <ul>
+    {% for post in page_obj %}
+    <li><a href="{% url 'post_detail' post.id %}">{{ post.title }}</a></li>
+    <p>{{post.content}}</p>
+    {% endfor %}
+  </ul>
+  <a href="{% url 'create' %}">Create new post</a
+  ><br />
+</ul>
+{% endblock %}
