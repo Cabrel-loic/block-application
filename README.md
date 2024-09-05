@@ -1,2 +1,2 @@
 rest framework
-todo project
+todo list
