@@ -1,2 +1,2 @@
-# block-application
+block-application
 django-project
