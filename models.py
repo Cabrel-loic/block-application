@@ -1,26 +1,25 @@
 from django.db import models
-from django.contrib.auth import get_user_model
+from django.contrib.auth.models import User
 
-User = get_user_model()
+# Create your models here.
 
-class Post(models.Model):
-    title = models.CharField (max_length=200)
-    content = models.TextField()
-    created_at = models.DateTimeField (auto_now_add=True)
-    updated_at = models.DateTimeField (auto_now=True)
-    
+class Category(models.Model):
+    name = models.CharField(max_length=200)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     def __str__(self):
-        return str(self.title)
-    
-class Comment(models.Model):
-    post = models.ForeignKey("Post",on_delete=models.CASCADE,related_name='comments')
-    name = models.CharField(max_length=80)
-    body = models.TextField()
-    created_on = models.DateTimeField(auto_now_add=True)
-    active = models.BooleanField(default=False)
-    author = models.ForeignKey(User, on_delete= models.CASCADE)
-    class Meta:
-        ordering = ['created_on']
-
-    def __str__(self):
-        return 'Comment {} by {}'.format(self.body, self.name)
+        return str(self.name)
+class Task(models.Model):
+    STATUS_CHOICES = [
+     ('pending', 'Pending'),
+     ('in_progress', 'In Progress'),
+     ('completed', 'Completed'),
+    ]
+    PRIORITY_CHOICES = [
+     ('low', 'Low'),
+     ('medium', 'Medium'),
+     ('high', 'High'),
+    ]
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    due_date = models.DateField()
+    status = models.CharField(max_length=10)
